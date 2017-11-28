@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://java.sun.com/xml/ns/javaee"
+         xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
+         version="3.0">
+  <welcome-file-list>
+    <welcome-file>/index.jsp</welcome-file>
+  </welcome-file-list>
+  <!--当系统出现404错误，跳转到页面NoPage.html-->
+  <error-page>
+    <error-code>404</error-code>
+    <location>/WEB-INF/NoPage.jsp</location>
+  </error-page>
+  <!--当系统出现java.lang.NullPointerException，跳转到页面error.html-->
+  <error-page>
+    <exception-type>java.lang.NullPointerException</exception-type>
+    <location>/WEB-INF/error.jsp</location>
+  </error-page>
+  <!--会话超时配置，单位分钟-->
+  <session-config>
+    <session-timeout>360</session-timeout>
+  </session-config>
+
+  <!-- Spring MVC配置 -->
+  <servlet>
+    <servlet-name>spring</servlet-name>
+    <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+    <!-- load-on-startup元素标记容器是否在启动的时候就加载这个servlet(实例化并调用其init()方法) -->
+    <init-param>
+      <!--指明了配置文件的文件名，不使用默认配置文件名，而使用spring-mvc.xml配置文件。-->
+      <param-name>contextConfigLocation</param-name>
+      <!--其中<param-value>**.xml</param-value> 这里可以使用多种写法-->
+      <!--1、不写,使用默认值:/WEB-INF/<servlet-name>-servlet.xml-->
+      <!--2、<param-value>/WEB-INF/classes/dispatcher-servlet.xml</param-value>-->
+      <!--3、<param-value>classpath*:dispatcher-servlet.xml</param-value>-->
+      <!--4、多个值用逗号分隔-->
+      <param-value>/WEB-INF/spring-mvc.xml</param-value>
+    </init-param>
+    <!--是启动顺序，让这个Servlet随Servlet容器一起启动。-->
+    <load-on-startup>1</load-on-startup>
+    <async-supported>true</async-supported>
+  </servlet>
+
+  <servlet-mapping>
+    <!--这个Servlet的名字是dispatcher，可以有多个DispatcherServlet，是通过名字来区分的。每一个DispatcherServlet有自己的WebApplicationContext上下文对象。同时保存的ServletContext中和Request对象中.-->
+    <!--ApplicationContext是Spring的核心，Context我们通常解释为上下文环境，我想用“容器”来表述它更容易理解一些，ApplicationContext则是“应用的容器”了，Spring把Bean放在这个容器中，在需要的时候，用getBean方法取出-->
+    <servlet-name>spring</servlet-name>
+    <!--Servlet拦截匹配规则可以自已定义，当映射为@RequestMapping("/user/add")时，为例,拦截哪种URL合适？-->
+    <!--1、拦截*.do、*.htm， 例如：/user/add.do,这是最传统的方式，最简单也最实用。不会导致静态文件（jpg,js,css）被拦截。-->
+    <!--2、拦截/，例如：/user/add,可以实现现在很流行的REST风格。很多互联网类型的应用很喜欢这种风格的URL。弊端：会导致静态文件（jpg,js,css）被拦截后不能正常显示。 -->
+    <url-pattern>/</url-pattern><!--会拦截URL中带“/”的请求。-->
+  </servlet-mapping>
+
+  <!-- Spring配置 -->
+  <listener>
+    <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+  </listener>
+  <!--Spring框架给我们提供过滤器CharacterEncodingFilter
+  这个过滤器就是针对于每次浏览器请求进行过滤的，然后再其之上添加了父类没有的功能即处理字符编码。
+  其中encoding用来设置编码格式，forceEncoding用来设置是否理会 request.getCharacterEncoding()方法，设置为true则强制覆盖之前的编码格式。-->
+  <filter>
+    <filter-name>characterEncodingFilter</filter-name>
+    <filter-class>org.springframework.web.filter.CharacterEncodingFilter</filter-class>
+    <init-param>
+      <param-name>encoding</param-name>
+      <param-value>UTF-8</param-value>
+    </init-param>
+    <init-param>
+      <param-name>forceEncoding</param-name>
+      <param-value>true</param-value>
+    </init-param>
+  </filter>
+  <filter-mapping>
+    <filter-name>characterEncodingFilter</filter-name>
+    <url-pattern>/*</url-pattern>
+  </filter-mapping>
+
+  <!-- 指定Spring Bean的配置文件所在目录。默认配置在WEB-INF目录下 -->
+  <context-param>
+    <param-name>contextConfigLocation</param-name>
+    <param-value>classpath:applicationContext.xml</param-value>
+  </context-param>
+  <!--如果你的DispatcherServlet拦截"/"，为了实现REST风格，拦截了所有的请求，那么同时对*.js,*.jpg等静态文件的访问也就被拦截了。-->
+  <!--方案一：激活Tomcat的defaultServlet来处理静态文件-->
+  <!--要写在DispatcherServlet的前面，让defaultServlet先拦截请求，这样请求就不会进入Spring了-->
+  <servlet-mapping>
+    <servlet-name>default</servlet-name>
+    <url-pattern>*.css</url-pattern>
+  </servlet-mapping>
+  <servlet-mapping>
+    <servlet-name>default</servlet-name>
+    <url-pattern>*.swf</url-pattern>
+  </servlet-mapping>
+  <servlet-mapping>
+    <servlet-name>default</servlet-name>
+    <url-pattern>*.gif</url-pattern>
+  </servlet-mapping>
+  <servlet-mapping>
+    <servlet-name>default</servlet-name>
+    <url-pattern>*.jpg</url-pattern>
+  </servlet-mapping>
+  <servlet-mapping>
+    <servlet-name>default</servlet-name>
+    <url-pattern>*.png</url-pattern>
+  </servlet-mapping>
+  <servlet-mapping>
+    <servlet-name>default</servlet-name>
+    <url-pattern>*.js</url-pattern>
+  </servlet-mapping>
+  <servlet-mapping>
+    <servlet-name>default</servlet-name>
+    <url-pattern>*.html</url-pattern>
+  </servlet-mapping>
+  <servlet-mapping>
+    <servlet-name>default</servlet-name>
+    <url-pattern>*.xml</url-pattern>
+  </servlet-mapping>
+  <servlet-mapping>
+    <servlet-name>default</servlet-name>
+    <url-pattern>*.json</url-pattern>
+  </servlet-mapping>
+  <servlet-mapping>
+    <servlet-name>default</servlet-name>
+    <url-pattern>*.map</url-pattern>
+  </servlet-mapping>
+</web-app>
